@@ -1,0 +1,207 @@
+#!/usr/local/bin/bash
+
+# A basic shell script for creating, updating, and managing jails.
+
+VERSION=0.1
+
+usage() {
+  echo "Simple Jail Manager version $VERSION"
+  echo "usage: "
+  echo "jm init - prepare the system for running jails"
+  echo "jm create [name] - create a new jail called [name]"
+  echo "jm list - list all running jails on the system"
+  echo "jm list-all - list all jails, running or dormant"
+  echo "jm start [name] - start the jail called [name]"
+  echo "jm stop [name] - stop the jail called [name]"
+  echo "jm enter [name] - start a shell inside jail [name]"
+  echo "jm update [name] - apply system and package updatesto jail [name]"
+  echo "jm destroy [name] - remove the jail called [name]"
+  echo "jm help - display this usage information screen "
+  echo "jm version - display this usage information screen"
+}
+
+if [ $# -lt 1 ]
+then
+  usage
+  exit 0
+fi
+
+if [ $1 == "help" ]
+then
+  usage
+  exit 0
+fi
+
+if [ $1 == "version" ]
+then
+  usage
+  exit 0
+fi
+
+if [ $1 == "list" ]
+then
+  /usr/sbin/jls
+  exit 0
+fi
+
+if [ $1 == "list-all" ]
+then
+   ls -1 /usr/local/jails/containers
+   exit 0
+fi
+
+if [ $EUID -ne 0 ]
+then
+   echo "This command requires root access."
+   exit 1
+fi
+
+if [ $1 == "init" ]
+then
+  echo "Setting up operating system to work with jails."
+  echo "Creating directories..."
+  mkdir /usr/local/jails
+  mkdir /usr/local/jails/media
+  mkdir /usr/local/jails/templates
+  mkdir /usr/local/jails/containers
+  echo "Making sure /etc/jail.conf exists..."
+  if [ ! -r "/etc/jail.conf" ]
+  then
+     touch /etc/jail.conf
+  fi
+  echo '.include "/etc/jail.conf.d/*.conf";' >> /etc/jail.conf
+  echo "Enabling jail services..."
+  /usr/sbin/sysrc jail_enable="YES"
+  /usr/sbin/sysrc jail_parallel_start="YES"
+  echo "System initialilzation finished. Ready to create jails."
+  echo "Use \"jm create jail-name\" to make a new jail."
+  exit 0
+fi
+
+if [ $1 == "create" ]
+then
+   if [ $# -lt 2 ]
+   then
+      echo "Please provide a name for this jail."
+      exit 2
+   fi
+
+  freebsdversion=$(freebsd-version -k)
+  echo "Fetching system files for FreeBSD $freebsdversion ..."
+  fetch -m https://download.freebsd.org/ftp/releases/amd64/amd64/"$freebsdversion"/base.txz -o /usr/local/jails/media/"$freebsdversion"-base.txz
+
+  echo "Creating new jail configuration file for $2"
+  conf="/etc/jail.conf.d/$2.conf"
+  if [ -r "$conf" ]
+  then
+    echo "A jail with this name already exists. Aborting."
+    exit 3
+  fi
+
+  interface=$(ifconfig | head -n 1 | cut -f 1 -d ':')
+  echo "$2 {" > $conf 
+  echo 'exec.start = "/bin/sh /etc/rc";' >> $conf 
+  echo 'exec.stop = "/bin/sh /etc/rc.shutdown";' >> $conf
+  echo 'exec.consolelog = "/var/log/jail_console_${name}.log";' >> $conf 
+  echo 'allow.raw_sockets;' >> $conf 
+  echo 'exec.clean;' >> $conf 
+  echo 'mount.devfs;' >> $conf 
+  echo 'host.hostname = "${name}";' >> $conf 
+  echo 'path = "/usr/local/jails/containers/${name}";' >> $conf 
+  echo 'ip4 = inherit;' >> $conf
+  echo 'ip6 = inherit;' >> $conf
+  echo "interface = $interface;" >> $conf 
+  echo "}" >> $conf
+
+  echo "Creating a directory for the new jail..."
+  mkdir -p /usr/local/jails/containers/"$2"
+  echo "Installing system files inside the jail..."
+  tar -xf /usr/local/jails/media/"$freebsdversion"-base.txz -C /usr/local/jails/containers/"$2" --unlink
+
+  echo "Copying configuration files to the jail..."
+  cp /etc/resolv.conf /usr/local/jails/containers/"$2"/etc/resolv.conf
+  cp /etc/localtime /usr/local/jails/containers/"$2"/etc/localtime
+
+  echo "Jail creation for $2 finished."
+  echo "Consider running 'jm start $2' followed by 'jm update $2' to make sure it is up to date."
+  exit 0
+fi
+# end of creating new jail
+
+
+if [ $1 == "start" ]
+then
+   if [ $# -lt 2 ]
+   then
+     echo "Please provide the name of the jail to start."
+     exit 4
+   fi
+
+   echo "Trying to start $2"
+   service jail start "$2"
+   exit 0
+fi
+
+
+if [ $1 == "stop" ]
+then
+   if [ $# -lt 2 ]
+   then
+      echo "Please provide the name of the jail to stop."
+      exit 5
+   fi
+
+   echo "Stopping jail $2"
+   service jail stop "$2"
+   exit 0
+fi
+
+if [ $1 == "enter" ]
+then
+   if [ $# -lt 2 ]
+   then
+      echo "Please provide the name of the jail to enter."
+      exit 6
+   fi
+   echo "Launching a shell for jail $2"
+   jexec -u root "$2"
+   exit 0
+fi
+
+
+if [ $1 == "update" ]
+then
+   if [ $# -lt 2 ]
+   then
+      echo "Please provide the name of the jail to update."
+      exit 7
+   fi
+
+   echo "Applying system updates to jail $2 ..."
+   freebsd-update -j "$2" fetch install
+   echo "Applying package updates to jail $2 ..."
+   pkg -j "$2" update
+   pkg -j "$2" upgrade
+   echo "Jail $2 updated."
+   exit 0
+fi
+
+
+if [ $1 == "destroy" ]
+then
+  if [ $# -lt 2 ]
+  then
+    echo "Please provide the name of the jail to remove."
+    exit 8
+  fi
+
+  echo "Stopping jail $2"
+  service jail stop "$2"
+  chflags -R 0 /usr/local/jails/containers/"$2"
+  echo "Removing jail $2"
+  rm -rf /usr/local/jails/containers/"$2"
+  rm /etc/jail.conf.d/"$2".conf
+  echo "Jail $2 removed."
+  exit 0
+fi
+
