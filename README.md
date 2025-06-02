@@ -9,6 +9,16 @@ To get started, first install bash:
 
      pkg install bash
 
+Next download the Jail Manager script and place it in an executable location on your
+system:
+
+     curl "https://raw.githubusercontent.com/slicer69/JailManager/refs/heads/main/jm" > jm
+     cp jm /usr/local/bin/
+
+Please note the above "cp" command, as with the commands which follow in this document,
+should be run as root. Either directly or by using an access elevating tool such as "sudo"
+or "doas".
+
 Then run this one-time command to initialize the FreeBSD system for running jails.
 
      jm init
