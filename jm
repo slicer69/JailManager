@@ -12,7 +12,9 @@ usage() {
   echo "jm list - list all running jails on the system"
   echo "jm list-all - list all jails, running or dormant"
   echo "jm start [name] - start the jail called [name]"
+  echo "jm start-all - start all jails"
   echo "jm stop [name] - stop the jail called [name]"
+  echo "jm stop-all - stop all jails"
   echo "jm enter [name] - start a shell inside jail [name]"
   echo "jm update [name] - apply system and package updatesto jail [name]"
   echo "jm destroy [name] - remove the jail called [name]"
@@ -46,7 +48,8 @@ fi
 
 if [ $1 == "list-all" ]
 then
-   ls -1 /usr/local/jails/containers
+   echo "All available jails:"
+   ls -1 /usr/local/jails/containers | sort -f
    exit 0
 fi
 
@@ -142,6 +145,15 @@ then
    exit 0
 fi
 
+if [ $1 == "start-all" ]
+then
+   echo "Trying to start all jails..."
+   for myjail in $(ls -1 /usr/local/jails/containers/)
+   do
+      service jail start "$myjail"
+   done
+   exit 0
+fi
 
 if [ $1 == "stop" ]
 then
@@ -153,6 +165,16 @@ then
 
    echo "Stopping jail $2"
    service jail stop "$2"
+   exit 0
+fi
+
+if [ $1 == "stop-all" ]
+then
+   echo "Stopping all jails..."
+   for myjail in $(jls | awk '{if (NR > 1) print $2}')
+   do
+      service jail stop "$myjail"
+   done
    exit 0
 fi
 
