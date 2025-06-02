@@ -12,7 +12,7 @@ To get started, first install bash:
 Next download the Jail Manager script and place it in an executable location on your
 system:
 
-     curl "https://raw.githubusercontent.com/slicer69/JailManager/refs/heads/main/jm" > jm
+     fetch "https://raw.githubusercontent.com/slicer69/JailManager/refs/heads/main/jm"
      cp jm /usr/local/bin/
 
 Please note the above "cp" command, as with the commands which follow in this document,
