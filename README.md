@@ -3,7 +3,7 @@ A Bash shell script for creating, managing, and removing jails.
 
 This project provides a simple shell script for creating and managing jails. It
 does not require any dependencies other than Bash and it works on any
-FreeBSD system (version 13.x and newer) with either the UFS or ZFS filesystem.
+FreeBSD system (version 13.x and newer) in the -RELEASE branch with either the UFS or ZFS filesystem.
 
 To get started, first install bash:
 

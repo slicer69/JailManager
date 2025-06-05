@@ -2,7 +2,7 @@
 
 # A basic shell script for creating, updating, and managing jails.
 
-VERSION=0.2
+VERSION=0.3
 
 usage() {
   echo "Simple Jail Manager version $VERSION"
@@ -89,7 +89,15 @@ then
       exit 2
    fi
 
-  freebsdversion=$(freebsd-version -k)
+  freebsdversion=$(freebsd-version -u)
+  echo $freebsdversion | grep -q "RELEASE"
+  status=$?
+  if [ ! $status ]
+  then
+     echo "Please only use this tool on a -RELEASE branch."
+     exit 2
+  fi
+  freebsdversion=$(echo $freebsdversion | cut -f 1,2 -d '-')
   echo "Fetching system files for FreeBSD $freebsdversion ..."
   fetch -m https://download.freebsd.org/ftp/releases/amd64/amd64/"$freebsdversion"/base.txz -o /usr/local/jails/media/"$freebsdversion"-base.txz
 
@@ -226,4 +234,8 @@ then
   echo "Jail $2 removed."
   exit 0
 fi
+
+echo "The command supplied was not recognized."
+usage
+exit 0
 
