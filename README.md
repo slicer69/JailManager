@@ -10,7 +10,7 @@ FreeBSD's package repository:
 
      pkg install jailmanager
 
-Altenratively, you can install Jail Manager from this repository using the folling three commands.
+Alternatively, you can install Jail Manager from this repository using the folling three commands.
 This will install the Bash shell, fetch the Jail Manager script, and install it on your system:
 
      pkg install bash
