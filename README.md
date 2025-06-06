@@ -5,25 +5,28 @@ This project provides a simple shell script for creating and managing jails. It
 does not require any dependencies other than Bash and it works on any
 FreeBSD system (version 13.x and newer) in the -RELEASE branch with either the UFS or ZFS filesystem.
 
-To get started, first install bash:
+To get started, there are two options. The first is to simply install Jail Manager from
+FreeBSD's package repository:
+
+     pkg install jailmanager
+
+Altenratively, you can install Jail Manager from this repository using the folling three commands.
+This will install the Bash shell, fetch the Jail Manager script, and install it on your system:
 
      pkg install bash
-
-Next download the Jail Manager script and place it in an executable location on your
-system:
-
      fetch "https://raw.githubusercontent.com/slicer69/JailManager/refs/heads/main/jm"
      cp jm /usr/local/bin/
 
-Please note the above "cp" command, as with the commands which follow in this document,
+Please note the above "pkg" and "cp" commands, as with the commands which follow in this document,
 should be run as root. Either directly or by using an access elevating tool such as "sudo"
 or "doas".
 
-Then run this one-time command to initialize the FreeBSD system for running jails.
+At this point the Jail Manager script has been installed. We can then run this one-time 
+command to initialize the FreeBSD system for running jails.
 
      jm init
 
-The above command needs onlyto be run once, to prepare the system's directories
+The above command needs only to be run once, to prepare the system's directories
 and services.
 
 To create a jail called "hello" run:
