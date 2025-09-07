@@ -1,4 +1,7 @@
 # JailManager
+
+## This project has been moved to CodeBerg: https://codeberg.org/thejessesmith/JailManager
+
 A Bash shell script for creating, managing, and removing jails.
 
 This project provides a simple shell script for creating and managing jails. It
